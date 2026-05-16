@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Price Updates{% endblock %}
+
+{% block content %}
+
+<h1>Upload Price Updates</h1>
+
+<div class="card">
+    <h3>Upload CSV or Excel File</h3>
+
+    <p>
+        Your file must contain at least two columns:
+        <strong>symbol</strong> and <strong>current_price</strong>.
+    </p>
+
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        {{ form.price_file.label }}
+        {{ form.price_file }}
+
+        {% for error in form.price_file.errors %}
+            <small class="error-text">{{ error }}</small>
+        {% endfor %}
+
+        <a class="btn" href="{{ url_for('market.sample_price_template') }}">
+            Download Sample CSV Template
+        </a>
+
+        <button type="submit">Upload and Update Prices</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Sample CSV Format</h3>
+
+<pre>
+symbol,current_price,date
+GTCO,45.20,2026-05-14
+ZENITHBANK,42.75,2026-05-14
+MTNN,240.00,2026-05-14
+FGN2031,1020.00,2026-05-14
+</pre>
+</div>
+
+{% if result %}
+<div class="card">
+    <h3>Upload Result</h3>
+
+    <p>
+        <strong>Updated:</strong> {{ result.updated }} |
+        <strong>Skipped:</strong> {{ result.skipped }} |
+        <strong>Failed:</strong> {{ result.failed }}
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Investment</th>
+                <th>Status</th>
+                <th>Old Price</th>
+                <th>New Price</th>
+                <th>Old Value</th>
+                <th>New Value</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in result.results %}
+            <tr>
+                <td>{{ item.symbol }}</td>
+                <td>{{ item.investment or '-' }}</td>
+                <td>{{ item.status }}</td>
+                <td>
+                    {% if item.old_price is defined %}
+                        ₦{{ "{:,.2f}".format(item.old_price) }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.new_price is defined %}
+                        ₦{{ "{:,.2f}".format(item.new_price) }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.old_value is defined %}
+                        ₦{{ "{:,.2f}".format(item.old_value) }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.new_value is defined %}
+                        ₦{{ "{:,.2f}".format(item.new_value) }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ item.message }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Recent Price Update Logs</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Symbol</th>
+                <th>Investment</th>
+                <th>Old Price</th>
+                <th>New Price</th>
+                <th>Status</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ log.symbol }}</td>
+                <td>{{ log.investment_name or '-' }}</td>
+                <td>₦{{ "{:,.2f}".format(log.old_price or 0) }}</td>
+                <td>₦{{ "{:,.2f}".format(log.new_price or 0) }}</td>
+                <td>{{ log.status }}</td>
+                <td>{{ log.message }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7">No price update log yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

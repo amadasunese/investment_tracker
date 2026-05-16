@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Investment{% endblock %}
+
+{% block content %}
+
+<h1>Edit Investment</h1>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+
+    <div class="form-grid">
+        <div>
+            {{ form.investment_name.label }}
+            {{ form.investment_name }}
+        </div>
+
+        <div>
+            {{ form.investment_type.label }}
+            {{ form.investment_type }}
+        </div>
+
+        <div>
+            {{ form.sector.label }}
+            {{ form.sector }}
+        </div>
+
+        <div>
+            {{ form.symbol.label }}
+            {{ form.symbol }}
+        </div>
+
+        <div>
+            {{ form.institution.label }}
+            {{ form.institution }}
+        </div>
+
+        <div>
+            {{ form.purchase_date.label }}
+            {{ form.purchase_date }}
+        </div>
+
+        <div>
+            {{ form.maturity_date.label }}
+            {{ form.maturity_date }}
+        </div>
+
+        <div>
+            {{ form.units.label }}
+            {{ form.units }}
+        </div>
+
+        <div>
+            {{ form.purchase_price.label }}
+            {{ form.purchase_price }}
+        </div>
+
+        <div>
+            {{ form.current_price.label }}
+            {{ form.current_price }}
+        </div>
+
+        <div>
+            {{ form.principal_amount.label }}
+            {{ form.principal_amount(readonly=true, class="auto-calc-field") }}
+            <small>Auto-calculated as Units × Purchase Price</small>
+        </div>
+        
+        <div>
+            {{ form.current_value.label }}
+            {{ form.current_value(readonly=true, class="auto-calc-field") }}
+            <small>Auto-calculated as Units × Current Price</small>
+        </div>
+
+        <div>
+            {{ form.interest_rate.label }}
+            {{ form.interest_rate }}
+        </div>
+
+        <div>
+            {{ form.coupon_frequency.label }}
+            {{ form.coupon_frequency }}
+        </div>
+
+        <div>
+            {{ form.dividends_received.label }}
+            {{ form.dividends_received }}
+        </div>
+
+        <div>
+            {{ form.interest_received.label }}
+            {{ form.interest_received }}
+        </div>
+    </div>
+
+    <div>
+        {{ form.notes.label }}
+        {{ form.notes }}
+    </div>
+
+    <button type="submit">Update Investment</button>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const unitsInput = document.querySelector("[name='units']");
+        const purchasePriceInput = document.querySelector("[name='purchase_price']");
+        const currentPriceInput = document.querySelector("[name='current_price']");
+        const principalAmountInput = document.querySelector("[name='principal_amount']");
+        const currentValueInput = document.querySelector("[name='current_value']");
+    
+        function toNumber(value) {
+            const number = parseFloat(value);
+            return isNaN(number) ? 0 : number;
+        }
+    
+        function calculateValues() {
+            const units = toNumber(unitsInput.value);
+            const purchasePrice = toNumber(purchasePriceInput.value);
+            const currentPrice = toNumber(currentPriceInput.value);
+    
+            const principalAmount = units * purchasePrice;
+            const currentValue = units * currentPrice;
+    
+            principalAmountInput.value = principalAmount.toFixed(2);
+            currentValueInput.value = currentValue.toFixed(2);
+        }
+    
+        if (unitsInput && purchasePriceInput && currentPriceInput && principalAmountInput && currentValueInput) {
+            unitsInput.addEventListener("input", calculateValues);
+            purchasePriceInput.addEventListener("input", calculateValues);
+            currentPriceInput.addEventListener("input", calculateValues);
+    
+            calculateValues();
+        }
+    });
+    </script>
+    
+{% endblock %}

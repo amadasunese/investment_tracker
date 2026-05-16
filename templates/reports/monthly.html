@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Report{% endblock %}
+
+{% block content %}
+
+<h1>Monthly Investment Report</h1>
+
+<form method="GET" class="filter-form">
+    <input type="number" name="month" value="{{ month }}" min="1" max="12">
+    <input type="number" name="year" value="{{ year }}">
+    <button type="submit">Generate</button>
+</form>
+
+<div class="cards">
+    <div class="card">
+        <h3>Total Invested</h3>
+        <p>₦{{ "{:,.2f}".format(total_invested) }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Current Value</h3>
+        <p>₦{{ "{:,.2f}".format(total_current_value) }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Profit / Loss</h3>
+        <p>₦{{ "{:,.2f}".format(total_profit_loss) }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Dividends This Month</h3>
+        <p>₦{{ "{:,.2f}".format(total_dividends) }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Coupon Due This Month</h3>
+        <p>₦{{ "{:,.2f}".format(total_coupon_due) }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Coupon Paid This Month</h3>
+        <p>₦{{ "{:,.2f}".format(total_coupon_paid) }}</p>
+    </div>
+</div>
+
+<h2>Dividends Paid in {{ month }}/{{ year }}</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Investment</th>
+            <th>Date</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for dividend in monthly_dividends %}
+        <tr>
+            <td>{{ dividend.investment.investment_name }}</td>
+            <td>{{ dividend.payment_date }}</td>
+            <td>₦{{ "{:,.2f}".format(dividend.amount) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="3">No dividends for this period.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Coupon Payments in {{ month }}/{{ year }}</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Investment</th>
+            <th>Due Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for coupon in monthly_coupons %}
+        <tr>
+            <td>{{ coupon.investment.investment_name }}</td>
+            <td>{{ coupon.due_date }}</td>
+            <td>₦{{ "{:,.2f}".format(coupon.amount) }}</td>
+            <td>{{ coupon.status }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4">No coupon records for this period.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

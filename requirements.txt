@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-WTF
+Flask-Migrate
+Flask-Login
+Werkzeug
+python-dotenv
+openpyxl
+pandas
+reportlab
+requests

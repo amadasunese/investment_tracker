@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Investment Monitor{% endblock %}
+
+{% block content %}
+
+<h1>Investment Dashboard</h1>
+
+<div class="cards">
+    <div class="card">
+        <h3>Total Invested</h3>
+        <p>₦{{ "{:,.2f}".format(total_invested) }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Current Value</h3>
+        <p>₦{{ "{:,.2f}".format(total_current_value) }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Total Income</h3>
+        <p>₦{{ "{:,.2f}".format(total_income) }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Profit / Loss</h3>
+        <p class="{% if total_profit_loss >= 0 %}profit{% else %}loss{% endif %}">
+            ₦{{ "{:,.2f}".format(total_profit_loss) }}
+        </p>
+    </div>
+
+    <div class="card">
+        <h3>ROI</h3>
+        <p>{{ "{:.2f}".format(roi) }}%</p>
+    </div>
+</div>
+
+<div class="actions">
+    <a class="btn" href="{{ url_for('reports.export_excel') }}">Export Portfolio to Excel</a>
+    <a class="btn" href="{{ url_for('reports.monthly_report') }}">Monthly Report</a>
+    <a class="btn" href="{{ url_for('reports.pdf_statement') }}">Download PDF Statement</a>
+
+    {% if current_user.role in ['admin', 'superadmin'] %}
+    <form method="POST" action="{{ url_for('market.update_prices') }}" style="display:inline;">
+        <button type="submit">Update Stock Prices</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if maturity_alerts %}
+<div class="alert warning">
+    <h3>Maturity Alerts</h3>
+    <ul>
+        {% for inv in maturity_alerts %}
+        <li>
+            {{ inv.investment_name }} matures on {{ inv.maturity_date }}
+            — {{ inv.days_to_maturity() }} days left.
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if coupon_alerts %}
+<div class="alert info">
+    <h3>Upcoming Coupon Payments</h3>
+    <ul>
+        {% for coupon in coupon_alerts %}
+        <li>
+            {{ coupon.investment.investment_name }} coupon of
+            ₦{{ "{:,.2f}".format(coupon.amount) }}
+            is due on {{ coupon.due_date }}.
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="chart-grid">
+    <div class="chart-box">
+        <h2>By Investment Type</h2>
+        <canvas id="typeChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+        <h2>By Sector</h2>
+        <canvas id="sectorChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+        <h2>By Maturity Year</h2>
+        <canvas id="maturityChart"></canvas>
+    </div>
+</div>
+
+<script>
+const byTypeLabels = {{ by_type.keys()|list|tojson }};
+const byTypeValues = {{ by_type.values()|list|tojson }};
+
+const bySectorLabels = {{ by_sector.keys()|list|tojson }};
+const bySectorValues = {{ by_sector.values()|list|tojson }};
+
+const byMaturityLabels = {{ by_maturity_year.keys()|list|tojson }};
+const byMaturityValues = {{ by_maturity_year.values()|list|tojson }};
+
+new Chart(document.getElementById('typeChart'), {
+    type: 'doughnut',
+    data: {
+        labels: byTypeLabels,
+        datasets: [{
+            data: byTypeValues
+        }]
+    }
+});
+
+new Chart(document.getElementById('sectorChart'), {
+    type: 'bar',
+    data: {
+        labels: bySectorLabels,
+        datasets: [{
+            label: 'Value',
+            data: bySectorValues
+        }]
+    }
+});
+
+new Chart(document.getElementById('maturityChart'), {
+    type: 'bar',
+    data: {
+        labels: byMaturityLabels,
+        datasets: [{
+            label: 'Value',
+            data: byMaturityValues
+        }]
+    }
+});
+</script>
+
+<h2>Recent Investments</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Sector</th>
+            <th>Invested</th>
+            <th>Current Value</th>
+            <th>Income</th>
+            <th>Profit/Loss</th>
+            <th>ROI</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for investment in investments[:10] %}
+        <tr>
+            <td>
+                <a href="{{ url_for('investments.detail', id=investment.id) }}">
+                    {{ investment.investment_name }}
+                </a>
+            </td>
+            <td>{{ investment.investment_type }}</td>
+            <td>{{ investment.sector or '-' }}</td>
+            <td>₦{{ "{:,.2f}".format(investment.principal_amount) }}</td>
+            <td>₦{{ "{:,.2f}".format(investment.calculate_current_value()) }}</td>
+            <td>₦{{ "{:,.2f}".format(investment.total_income()) }}</td>
+            <td class="{% if investment.profit_or_loss() >= 0 %}profit{% else %}loss{% endif %}">
+                ₦{{ "{:,.2f}".format(investment.profit_or_loss()) }}
+            </td>
+            <td>{{ "{:.2f}".format(investment.roi_percentage()) }}%</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8">No investment recorded yet.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

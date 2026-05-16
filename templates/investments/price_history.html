@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Price History - {{ investment.investment_name }}{% endblock %}
+
+{% block content %}
+
+<h1>Price History</h1>
+
+<div class="card">
+    <h2>{{ investment.investment_name }}</h2>
+
+    <p><strong>Symbol:</strong> {{ investment.symbol or '-' }}</p>
+    <p><strong>Type:</strong> {{ investment.investment_type }}</p>
+    <p><strong>Units:</strong> {{ "{:,.2f}".format(investment.units or 0) }}</p>
+    <p><strong>Current Price:</strong> ₦{{ "{:,.2f}".format(investment.current_price or 0) }}</p>
+    <p><strong>Current Value:</strong> ₦{{ "{:,.2f}".format(investment.calculate_current_value()) }}</p>
+</div>
+
+<div class="chart-grid">
+    <div class="chart-box">
+        <h3>Price Movement</h3>
+        <canvas id="priceChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+        <h3>Investment Value Movement</h3>
+        <canvas id="valueChart"></canvas>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Price History Records</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Symbol</th>
+                <th>Price</th>
+                <th>Value</th>
+                <th>Source</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in history %}
+            <tr>
+                <td>{{ item.recorded_date }}</td>
+                <td>{{ item.symbol }}</td>
+                <td>₦{{ "{:,.2f}".format(item.price) }}</td>
+                <td>₦{{ "{:,.2f}".format(item.value) }}</td>
+                <td>{{ item.source }}</td>
+                <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">No price history available yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+const labels = {{ labels|tojson }};
+const prices = {{ prices|tojson }};
+const values = {{ values|tojson }};
+
+new Chart(document.getElementById("priceChart"), {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Price",
+            data: prices,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById("valueChart"), {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Value",
+            data: values,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

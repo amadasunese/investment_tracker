@@ -1,0 +1,1118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Investment Monitor{% endblock %}
+
+{% block content %}
+
+{% set profit_positive = total_profit_loss >= 0 %}
+{% set roi_positive = roi >= 0 %}
+
+<div class="investment-dashboard">
+
+    <!-- Page Header -->
+    <!-- <section class="dashboard-hero">
+        <div class="hero-content">
+            <div>
+                <span class="eyebrow">Investment Monitor</span>
+                <h1>Portfolio Dashboard</h1>
+                <p>
+                    Track your portfolio value, income, profit/loss, maturity exposure,
+                    and recent investment activity.
+                </p>
+            </div>
+
+            <div class="hero-meta">
+                <span>Last updated</span>
+                <strong>{{ now.strftime('%d %b %Y, %H:%M') if now else 'Now' }}</strong>
+            </div>
+        </div>
+    </section> -->
+
+    <!-- Page Header -->
+    <section class="dashboard-hero">
+        <div class="hero-content">
+            <div>
+                <span class="eyebrow">Investment Monitor</span>
+
+                <h1>
+                    Welcome back, 
+                    {{ current_user.full_name or current_user.username or current_user.email }}
+                </h1>
+
+                <p class="hero-subtitle">
+                    Here is your portfolio dashboard. Track your investment value, income,
+                    profit/loss, maturity exposure, and recent investment activity.
+                </p>
+            </div>
+
+            <div class="hero-meta">
+                <span>Last updated</span>
+                <strong>{{ now.strftime('%d %b %Y, %H:%M') if now else 'Now' }}</strong>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Quick Actions -->
+    <section class="dashboard-actions" aria-label="Dashboard actions">
+        <div class="action-group">
+            <a href="{{ url_for('reports.export_excel') }}" class="btn-action">
+                <span>📊</span>
+                Export Excel
+            </a>
+
+            <a href="{{ url_for('reports.monthly_report') }}" class="btn-action">
+                <span>📅</span>
+                Monthly Report
+            </a>
+
+            <a href="{{ url_for('reports.pdf_statement') }}" class="btn-action">
+                <span>📄</span>
+                PDF Statement
+            </a>
+        </div>
+
+        {% if current_user.role in ['admin', 'superadmin'] %}
+        <form method="POST" action="{{ url_for('market.update_prices') }}">
+            {% if csrf_token is defined %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% endif %}
+            <button type="submit" class="btn-action btn-primary-action">
+                <span>🔄</span>
+                Refresh Prices
+            </button>
+        </form>
+        {% endif %}
+    </section>
+
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid">
+
+        <article class="kpi-card">
+            <div class="kpi-icon blue">₦</div>
+            <div class="kpi-body">
+                <span>Total Invested</span>
+                <strong>₦{{ "{:,.0f}".format(total_invested or 0) }}</strong>
+                <small>Capital committed</small>
+            </div>
+        </article>
+
+        <article class="kpi-card">
+            <div class="kpi-icon green">↗</div>
+            <div class="kpi-body">
+                <span>Current Value</span>
+                <strong>₦{{ "{:,.0f}".format(total_current_value or 0) }}</strong>
+                <small>Latest portfolio valuation</small>
+            </div>
+        </article>
+
+        <article class="kpi-card">
+            <div class="kpi-icon purple">₦</div>
+            <div class="kpi-body">
+                <span>Total Income</span>
+                <strong>₦{{ "{:,.0f}".format(total_income or 0) }}</strong>
+                <small>Coupons, dividends and returns</small>
+            </div>
+        </article>
+
+        <article class="kpi-card">
+            <div class="kpi-icon {{ 'green' if profit_positive else 'red' }}">
+                {{ '▲' if profit_positive else '▼' }}
+            </div>
+            <div class="kpi-body">
+                <span>Profit / Loss</span>
+                <strong class="{{ 'text-success' if profit_positive else 'text-danger' }}">
+                    ₦{{ "{:,.0f}".format(total_profit_loss or 0) }}
+                </strong>
+                <small>
+                    {{ 'Positive portfolio movement' if profit_positive else 'Portfolio value decline' }}
+                </small>
+            </div>
+        </article>
+
+        <article class="kpi-card">
+            <div class="kpi-icon amber">%</div>
+            <div class="kpi-body">
+                <span>Return on Investment</span>
+                <strong class="{{ 'text-success' if roi_positive else 'text-danger' }}">
+                    {{ "{:.1f}".format(roi or 0) }}%
+                </strong>
+                <small>Overall portfolio ROI</small>
+            </div>
+        </article>
+
+    </section>
+
+
+    <!-- Alerts -->
+    {% if maturity_alerts or coupon_alerts %}
+    <section class="alerts-grid">
+
+        {% if maturity_alerts %}
+        <article class="alert-card maturity-alert">
+            <div class="section-title">
+                <div>
+                    <span class="section-kicker">Risk Watch</span>
+                    <h2>Maturity Alerts</h2>
+                </div>
+                <span class="count-badge">{{ maturity_alerts|length }}</span>
+            </div>
+
+            <div class="alert-list">
+                {% for inv in maturity_alerts %}
+                <div class="alert-item">
+                    <div>
+                        <strong>{{ inv.investment_name }}</strong>
+                        <span>Maturity date: {{ inv.maturity_date }}</span>
+                    </div>
+
+                    <span class="days-pill {% if inv.days_to_maturity() <= 7 %}urgent{% endif %}">
+                        {{ inv.days_to_maturity() }} days
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+        {% endif %}
+
+
+        {% if coupon_alerts %}
+        <article class="alert-card coupon-alert">
+            <div class="section-title">
+                <div>
+                    <span class="section-kicker">Income Watch</span>
+                    <h2>Upcoming Coupons</h2>
+                </div>
+                <span class="count-badge">{{ coupon_alerts|length }}</span>
+            </div>
+
+            <div class="alert-list">
+                {% for c in coupon_alerts %}
+                <div class="alert-item">
+                    <div>
+                        <strong>{{ c.investment.investment_name }}</strong>
+                        <span>Due date: {{ c.due_date }}</span>
+                    </div>
+
+                    <span class="amount-pill">
+                        ₦{{ "{:,.0f}".format(c.amount or 0) }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+        {% endif %}
+
+    </section>
+    {% endif %}
+
+
+    <!-- Charts -->
+    <section class="charts-grid">
+
+        <article class="dashboard-card">
+            <div class="section-title">
+                <div>
+                    <span class="section-kicker">Allocation</span>
+                    <h2>Portfolio by Type</h2>
+                </div>
+            </div>
+
+            <div class="chart-wrap">
+                <canvas id="typeChart"></canvas>
+            </div>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="section-title">
+                <div>
+                    <span class="section-kicker">Exposure</span>
+                    <h2>Portfolio by Sector</h2>
+                </div>
+            </div>
+
+            <div class="chart-wrap">
+                <canvas id="sectorChart"></canvas>
+            </div>
+        </article>
+
+        <article class="dashboard-card chart-wide">
+            <div class="section-title">
+                <div>
+                    <span class="section-kicker">Timeline</span>
+                    <h2>Portfolio by Maturity Year</h2>
+                </div>
+            </div>
+
+            <div class="chart-wrap chart-large">
+                <canvas id="maturityChart"></canvas>
+            </div>
+        </article>
+
+    </section>
+
+
+    <!-- Recent Investments Table -->
+    <section class="dashboard-card table-card">
+        <div class="section-title table-heading">
+            <div>
+                <span class="section-kicker">Recent Activity</span>
+                <h2>Recent Investments</h2>
+            </div>
+
+            <a href="{{ url_for('investments.list_investments') }}" class="view-link">
+                View all investments →
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="investment-table">
+                <thead>
+                    <tr>
+                        <th>Investment</th>
+                        <th>Type</th>
+                        <th>Sector</th>
+                        <th class="text-right">Invested</th>
+                        <th class="text-right">Current Value</th>
+                        <th class="text-right">Income</th>
+                        <th class="text-right">P/L</th>
+                        <th class="text-right">ROI</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for i in investments[:10] %}
+                    {% set item_profit = i.profit_or_loss() %}
+                    {% set item_roi = i.roi_percentage() %}
+
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('investments.detail', id=i.id) }}" class="investment-name">
+                                {{ i.investment_name }}
+                            </a>
+                        </td>
+
+                        <td>
+                            <span class="type-badge">{{ i.investment_type }}</span>
+                        </td>
+
+                        <td>{{ i.sector or '-' }}</td>
+
+                        <td class="text-right money">
+                            ₦{{ "{:,.0f}".format(i.principal_amount or 0) }}
+                        </td>
+
+                        <td class="text-right money">
+                            ₦{{ "{:,.0f}".format(i.calculate_current_value() or 0) }}
+                        </td>
+
+                        <td class="text-right money">
+                            ₦{{ "{:,.0f}".format(i.total_income() or 0) }}
+                        </td>
+
+                        <td class="text-right money {{ 'text-success' if item_profit >= 0 else 'text-danger' }}">
+                            ₦{{ "{:,.0f}".format(item_profit or 0) }}
+                        </td>
+
+                        <td class="text-right money {{ 'text-success' if item_roi >= 0 else 'text-danger' }}">
+                            {{ "{:.1f}".format(item_roi or 0) }}%
+                        </td>
+                    </tr>
+
+                    {% else %}
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-icon">📁</div>
+                                <h3>No investments recorded yet</h3>
+                                <p>Add your first investment to start tracking portfolio performance.</p>
+                                <a href="{{ url_for('investments.add') }}" class="btn-action btn-primary-action">
+                                    Add Investment
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof Chart === "undefined") {
+        console.warn("Chart.js is not loaded. Please include Chart.js in base.html.");
+        return;
+    }
+
+    Chart.defaults.font.family = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    Chart.defaults.color = "#64748b";
+
+    const chartColors = [
+        "#2563eb",
+        "#16a34a",
+        "#f59e0b",
+        "#7c3aed",
+        "#db2777",
+        "#0891b2",
+        "#ea580c",
+        "#475569"
+    ];
+
+    const typeLabels = {{ by_type.keys()|list|tojson }};
+    const typeValues = {{ by_type.values()|list|tojson }};
+
+    const sectorLabels = {{ by_sector.keys()|list|tojson }};
+    const sectorValues = {{ by_sector.values()|list|tojson }};
+
+    const maturityLabels = {{ by_maturity_year.keys()|list|tojson }};
+    const maturityValues = {{ by_maturity_year.values()|list|tojson }};
+
+    const nairaFormatter = new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+        maximumFractionDigits: 0
+    });
+
+    const shortNaira = (value) => {
+        const amount = Number(value || 0);
+
+        if (Math.abs(amount) >= 1_000_000_000) {
+            return "₦" + (amount / 1_000_000_000).toFixed(1) + "B";
+        }
+
+        if (Math.abs(amount) >= 1_000_000) {
+            return "₦" + (amount / 1_000_000).toFixed(1) + "M";
+        }
+
+        if (Math.abs(amount) >= 1_000) {
+            return "₦" + (amount / 1_000).toFixed(1) + "K";
+        }
+
+        return nairaFormatter.format(amount);
+    };
+
+    const commonTooltip = {
+        callbacks: {
+            label: function (context) {
+                const label = context.label || "";
+                const value = context.raw || 0;
+                return `${label}: ${nairaFormatter.format(value)}`;
+            }
+        }
+    };
+
+    new Chart(document.getElementById("typeChart"), {
+        type: "doughnut",
+        data: {
+            labels: typeLabels,
+            datasets: [{
+                data: typeValues,
+                backgroundColor: chartColors,
+                borderColor: "#ffffff",
+                borderWidth: 3,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "68%",
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: "circle",
+                        boxWidth: 8,
+                        padding: 16
+                    }
+                },
+                tooltip: commonTooltip
+            }
+        }
+    });
+
+    new Chart(document.getElementById("sectorChart"), {
+        type: "bar",
+        data: {
+            labels: sectorLabels,
+            datasets: [{
+                label: "Value",
+                data: sectorValues,
+                backgroundColor: "#2563eb",
+                borderRadius: 8,
+                barThickness: 28,
+                maxBarThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: commonTooltip
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: "#e2e8f0" },
+                    ticks: {
+                        callback: function (value) {
+                            return shortNaira(value);
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        maxRotation: 0,
+                        autoSkip: true
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById("maturityChart"), {
+        type: "bar",
+        data: {
+            labels: maturityLabels,
+            datasets: [{
+                label: "Value",
+                data: maturityValues,
+                backgroundColor: "#16a34a",
+                borderRadius: 8,
+                barThickness: 32,
+                maxBarThickness: 48
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: commonTooltip
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: "#e2e8f0" },
+                    ticks: {
+                        callback: function (value) {
+                            return shortNaira(value);
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+});
+</script>
+
+
+<style>
+:root {
+    --dash-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --text-soft: #94a3b8;
+    --border: #e2e8f0;
+    --border-soft: #f1f5f9;
+    --blue: #2563eb;
+    --blue-soft: #dbeafe;
+    --green: #16a34a;
+    --green-soft: #dcfce7;
+    --red: #dc2626;
+    --red-soft: #fee2e2;
+    --purple: #7c3aed;
+    --purple-soft: #ede9fe;
+    --amber: #f59e0b;
+    --amber-soft: #fef3c7;
+    --shadow: 0 20px 45px rgba(15, 23, 42, 0.06);
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+}
+
+.investment-dashboard {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 18px 40px;
+    background: var(--dash-bg);
+}
+
+/* Hero */
+.dashboard-hero {
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.22), transparent 32%),
+        linear-gradient(135deg, #0f172a 0%, #1e293b 52%, #2563eb 100%);
+    color: #ffffff;
+    border-radius: 28px;
+    padding: 28px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.hero-content {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.eyebrow,
+.section-kicker {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.eyebrow {
+    color: #bfdbfe;
+    margin-bottom: 8px;
+}
+
+.dashboard-hero h1 {
+    margin: 0;
+    font-size: clamp(26px, 4vw, 38px);
+    line-height: 1.1;
+    font-weight: 800;
+}
+
+.dashboard-hero p {
+    max-width: 620px;
+    margin: 10px 0 0;
+    color: #dbeafe;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.hero-meta {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    padding: 12px 16px;
+    border-radius: 16px;
+    min-width: 180px;
+}
+
+.hero-meta span {
+    display: block;
+    color: #bfdbfe;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+}
+
+.hero-meta strong {
+    font-size: 13px;
+}
+
+/* Actions */
+.dashboard-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.action-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 10px 15px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    transform: translateY(-1px);
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.btn-primary-action {
+    background: var(--blue);
+    color: #ffffff;
+    border-color: var(--blue);
+}
+
+.btn-primary-action:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+/* KPI */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.kpi-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    display: flex;
+    gap: 14px;
+    min-width: 0;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.kpi-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.kpi-icon.blue {
+    background: var(--blue-soft);
+    color: var(--blue);
+}
+
+.kpi-icon.green {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.kpi-icon.purple {
+    background: var(--purple-soft);
+    color: var(--purple);
+}
+
+.kpi-icon.red {
+    background: var(--red-soft);
+    color: var(--red);
+}
+
+.kpi-icon.amber {
+    background: var(--amber-soft);
+    color: #b45309;
+}
+
+.kpi-body {
+    min-width: 0;
+}
+
+.kpi-body span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.kpi-body strong {
+    display: block;
+    color: var(--text-main);
+    font-size: 20px;
+    line-height: 1.2;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kpi-body small {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-soft);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* Shared Cards */
+.dashboard-card,
+.alert-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.section-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.section-kicker {
+    color: var(--text-soft);
+    margin-bottom: 5px;
+}
+
+.section-title h2 {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+/* Alerts */
+.alerts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.maturity-alert {
+    border-left: 5px solid var(--amber);
+}
+
+.coupon-alert {
+    border-left: 5px solid var(--blue);
+}
+
+.count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.alert-list {
+    display: grid;
+    gap: 10px;
+}
+
+.alert-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: #f8fafc;
+    border: 1px solid var(--border-soft);
+    padding: 12px;
+    border-radius: 14px;
+}
+
+.alert-item strong {
+    display: block;
+    color: var(--text-main);
+    font-size: 13px;
+    margin-bottom: 3px;
+}
+
+.alert-item span {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.days-pill,
+.amount-pill {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px !important;
+    font-weight: 800;
+}
+
+.days-pill {
+    background: var(--green-soft);
+    color: var(--green) !important;
+}
+
+.days-pill.urgent {
+    background: var(--red-soft);
+    color: var(--red) !important;
+}
+
+.amount-pill {
+    background: var(--blue-soft);
+    color: var(--blue) !important;
+}
+
+/* Charts */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.chart-wide {
+    grid-column: 1 / -1;
+}
+
+.chart-wrap {
+    position: relative;
+    height: 280px;
+}
+
+.chart-large {
+    height: 320px;
+}
+
+/* Table */
+.table-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.table-heading {
+    padding: 20px 20px 0;
+}
+
+.view-link {
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.view-link:hover {
+    color: #1d4ed8;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.investment-table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.investment-table thead {
+    background: #f8fafc;
+}
+
+.investment-table th {
+    padding: 14px 16px;
+    text-align: left;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.investment-table td {
+    padding: 15px 16px;
+    color: #334155;
+    border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.investment-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.investment-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.investment-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.investment-name {
+    color: var(--text-main);
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.investment-name:hover {
+    color: var(--blue);
+}
+
+.type-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 10px;
+    background: var(--blue-soft);
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.money {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 700;
+}
+
+.text-success {
+    color: var(--green) !important;
+}
+
+.text-danger {
+    color: var(--red) !important;
+}
+
+/* Empty */
+.empty-state {
+    text-align: center;
+    padding: 54px 20px;
+}
+
+.empty-icon {
+    width: 58px;
+    height: 58px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border-radius: 20px;
+    font-size: 26px;
+    margin-bottom: 14px;
+}
+
+.empty-state h3 {
+    margin: 0 0 6px;
+    color: var(--text-main);
+    font-size: 18px;
+}
+
+.empty-state p {
+    margin: 0 auto 18px;
+    max-width: 420px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    .kpi-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 820px) {
+    .investment-dashboard {
+        padding: 16px 12px 32px;
+    }
+
+    .hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hero-meta {
+        width: 100%;
+    }
+
+    .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .alerts-grid,
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-wide {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 560px) {
+    .dashboard-hero {
+        padding: 22px;
+        border-radius: 22px;
+    }
+
+    .dashboard-actions {
+        align-items: stretch;
+    }
+
+    .action-group,
+    .dashboard-actions form,
+    .btn-action {
+        width: 100%;
+    }
+
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-title {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .table-heading {
+        padding: 18px 16px 0;
+    }
+
+    .dashboard-card,
+    .alert-card {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .chart-wrap,
+    .chart-large {
+        height: 260px;
+    }
+}
+</style>
+
+{% endblock %}

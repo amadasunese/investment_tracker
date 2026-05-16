@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Coupon Schedule{% endblock %}
+
+{% block content %}
+
+<h1>Coupon Schedule - {{ investment.investment_name }}</h1>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+
+    {{ form.due_date.label }}
+    {{ form.due_date }}
+
+    {{ form.amount.label }}
+    {{ form.amount }}
+
+    {{ form.status.label }}
+    {{ form.status }}
+
+    {{ form.paid_date.label }}
+    {{ form.paid_date }}
+
+    {{ form.notes.label }}
+    {{ form.notes }}
+
+    <button type="submit">Save Coupon</button>
+</form>
+
+<h2>Coupon Payments</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Due Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Paid Date</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for coupon in coupons %}
+        <tr>
+            <td>{{ coupon.due_date }}</td>
+            <td>₦{{ "{:,.2f}".format(coupon.amount) }}</td>
+            <td>{{ coupon.status }}</td>
+            <td>{{ coupon.paid_date or '-' }}</td>
+            <td>{{ coupon.notes or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">No coupon schedule yet.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

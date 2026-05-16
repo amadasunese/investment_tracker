@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Dividend History{% endblock %}
+
+{% block content %}
+
+<h1>Dividend History - {{ investment.investment_name }}</h1>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+
+    {{ form.payment_date.label }}
+    {{ form.payment_date }}
+
+    {{ form.amount_per_share.label }}
+    {{ form.amount_per_share }}
+
+    {{ form.units.label }}
+    {{ form.units }}
+
+    {{ form.notes.label }}
+    {{ form.notes }}
+
+    <button type="submit">Save Dividend</button>
+</form>
+
+<h2>Recorded Dividends</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Dividend Per Share</th>
+            <th>Units</th>
+            <th>Total Amount</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for dividend in dividends %}
+        <tr>
+            <td>{{ dividend.payment_date }}</td>
+            <td>₦{{ "{:,.2f}".format(dividend.amount_per_share) }}</td>
+            <td>{{ "{:,.2f}".format(dividend.units) }}</td>
+            <td>₦{{ "{:,.2f}".format(dividend.amount) }}</td>
+            <td>{{ dividend.notes or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">No dividend record yet.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}{{ investment.investment_name }}{% endblock %}
+
+{% block content %}
+
+<h1>{{ investment.investment_name }}</h1>
+
+<div class="detail-card">
+    <p><strong>Type:</strong> {{ investment.investment_type }}</p>
+    <p><strong>Institution:</strong> {{ investment.institution or '-' }}</p>
+    <p><strong>Purchase Date:</strong> {{ investment.purchase_date }}</p>
+    <p><strong>Maturity Date:</strong> {{ investment.maturity_date or 'Not Applicable' }}</p>
+
+    {% if investment.days_to_maturity() is not none %}
+        <p>
+            <strong>Days to Maturity:</strong>
+            {% if investment.days_to_maturity() >= 0 %}
+                {{ investment.days_to_maturity() }} days
+            {% else %}
+                Matured
+            {% endif %}
+        </p>
+    {% endif %}
+
+    <hr>
+
+    <p><strong>Units / Shares:</strong> {{ investment.units or '-' }}</p>
+    <p><strong>Purchase Price:</strong> ₦{{ "{:,.2f}".format(investment.purchase_price or 0) }}</p>
+    <p><strong>Current Price:</strong> ₦{{ "{:,.2f}".format(investment.current_price or 0) }}</p>
+
+    <hr>
+
+    <p><strong>Amount Invested:</strong> ₦{{ "{:,.2f}".format(investment.principal_amount) }}</p>
+    <p><strong>Current Value:</strong> ₦{{ "{:,.2f}".format(investment.calculate_current_value()) }}</p>
+    <p><strong>Total Income:</strong> ₦{{ "{:,.2f}".format(investment.total_income()) }}</p>
+
+    <p>
+        <strong>Profit / Loss:</strong>
+        <span class="{% if investment.profit_or_loss() >= 0 %}profit{% else %}loss{% endif %}">
+            ₦{{ "{:,.2f}".format(investment.profit_or_loss()) }}
+        </span>
+    </p>
+
+    <p><strong>ROI:</strong> {{ "{:.2f}".format(investment.roi_percentage()) }}%</p>
+
+    <hr>
+
+    <p><strong>Interest / Coupon Rate:</strong> {{ investment.interest_rate or 0 }}%</p>
+    <p><strong>Coupon Frequency:</strong> {{ investment.coupon_frequency or 'Not Applicable' }}</p>
+    <p><strong>Dividends Received:</strong> ₦{{ "{:,.2f}".format(investment.dividends_received) }}</p>
+    <p><strong>Interest Received:</strong> ₦{{ "{:,.2f}".format(investment.interest_received) }}</p>
+
+    <hr>
+
+    <p><strong>Notes:</strong></p>
+    <p>{{ investment.notes or 'No notes added.' }}</p>
+</div>
+
+<div class="actions">
+    <a class="btn" href="{{ url_for('investments.edit', id=investment.id) }}">Edit Investment</a>
+    <a class="btn" href="{{ url_for('investments.dividends', id=investment.id) }}">Dividend History</a>
+    <a class="btn" href="{{ url_for('investments.coupons', id=investment.id) }}">Coupon Schedule</a>
+    <a class="btn" href="{{ url_for('investments.price_history', id=investment.id) }}">Price History</a>
+
+    {% if investment.investment_type == 'FGN Bond' %}
+        <a class="btn" href="{{ url_for('investments.bond_yields', id=investment.id) }}">Bond Yield History</a>
+    {% endif %}
+</div>
+
+<a class="btn" href="{{ url_for('investments.edit', id=investment.id) }}">Edit Investment</a>
+
+<form method="POST" action="{{ url_for('investments.delete', id=investment.id) }}" onsubmit="return confirm('Are you sure you want to delete this investment?');">
+    <button type="submit" class="danger">Delete Investment</button>
+</form>
+
+{% endblock %}

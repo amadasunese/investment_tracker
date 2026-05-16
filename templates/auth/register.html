@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+
+<div class="auth-card">
+    <h1>Create Account</h1>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        {{ form.full_name.label }}
+        {{ form.full_name }}
+
+        {{ form.email.label }}
+        {{ form.email }}
+
+        {{ form.password.label }}
+        {{ form.password }}
+
+        {{ form.confirm_password.label }}
+        {{ form.confirm_password }}
+
+        <button type="submit">Create Account</button>
+    </form>
+</div>
+
+{% endblock %}

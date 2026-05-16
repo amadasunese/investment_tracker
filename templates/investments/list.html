@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Investments{% endblock %}
+
+{% block content %}
+
+<h1>All Investments</h1>
+
+<form method="GET" class="filter-form">
+    <input type="text" name="q" placeholder="Search investment..." value="{{ search or '' }}">
+
+    <select name="type">
+        <option value="">All Types</option>
+        <option value="FGN Bond" {% if investment_type == 'FGN Bond' %}selected{% endif %}>FGN Bond</option>
+        <option value="Nigerian Stock" {% if investment_type == 'Nigerian Stock' %}selected{% endif %}>Nigerian Stock</option>
+        <option value="Treasury Bill" {% if investment_type == 'Treasury Bill' %}selected{% endif %}>Treasury Bill</option>
+        <option value="Mutual Fund" {% if investment_type == 'Mutual Fund' %}selected{% endif %}>Mutual Fund</option>
+        <option value="Fixed Deposit" {% if investment_type == 'Fixed Deposit' %}selected{% endif %}>Fixed Deposit</option>
+        <option value="Real Estate" {% if investment_type == 'Real Estate' %}selected{% endif %}>Real Estate</option>
+        <option value="Other" {% if investment_type == 'Other' %}selected{% endif %}>Other</option>
+    </select>
+
+    <button type="submit">Filter</button>
+</form>
+
+<a class="btn" href="{{ url_for('investments.add_investment') }}">Add New Investment</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Institution</th>
+            <th>Invested</th>
+            <th>Current Value</th>
+            <th>Last Price Update</th>
+            <th>Income</th>
+            <th>Profit/Loss</th>
+            <th>ROI</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for investment in investments %}
+        <tr>
+            <td>{{ investment.investment_name }}</td>
+            <td>{{ investment.investment_type }}</td>
+            <td>{{ investment.institution or '-' }}</td>
+            <td>₦{{ "{:,.2f}".format(investment.principal_amount) }}</td>
+            <td>₦{{ "{:,.2f}".format(investment.calculate_current_value()) }}</td>
+            <td>
+                {% if investment.last_price_update %}
+                    {{ investment.last_price_update.strftime('%Y-%m-%d %H:%M') }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>₦{{ "{:,.2f}".format(investment.total_income()) }}</td>
+            <td class="{% if investment.profit_or_loss() >= 0 %}profit{% else %}loss{% endif %}">
+                ₦{{ "{:,.2f}".format(investment.profit_or_loss()) }}
+            </td>
+            <td>{{ "{:.2f}".format(investment.roi_percentage()) }}%</td>
+            <td>
+                <a href="{{ url_for('investments.detail', id=investment.id) }}">View</a> |
+                <a href="{{ url_for('investments.edit', id=investment.id) }}">Edit</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="9">No investment found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

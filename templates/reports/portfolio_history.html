@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolio Value History{% endblock %}
+
+{% block content %}
+
+<h1>Portfolio Value Over Time</h1>
+
+<div class="chart-box">
+    <h3>Total Portfolio Value Movement</h3>
+    <canvas id="portfolioHistoryChart"></canvas>
+</div>
+
+<div class="card">
+    <h3>History Records</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Investment</th>
+                <th>Symbol</th>
+                <th>Price</th>
+                <th>Value</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in histories %}
+            <tr>
+                <td>{{ item.recorded_date }}</td>
+                <td>{{ item.investment.investment_name }}</td>
+                <td>{{ item.symbol }}</td>
+                <td>₦{{ "{:,.2f}".format(item.price) }}</td>
+                <td>₦{{ "{:,.2f}".format(item.value) }}</td>
+                <td>{{ item.source }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">No portfolio history available yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+const labels = {{ labels|tojson }};
+const values = {{ values|tojson }};
+
+new Chart(document.getElementById("portfolioHistoryChart"), {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Portfolio Value",
+            data: values,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

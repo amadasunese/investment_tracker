@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Investment Monitor{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+    <!-- Left Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <a href="{{ url_for('dashboard') }}">Investment Monitor</a>
+        </div>
+
+        <nav class="sidebar-nav">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('dashboard') }}" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="{{ url_for('investments.list_investments') }}" class="nav-item">
+                    <span class="nav-icon">💼</span>
+                    <span class="nav-label">Investments</span>
+                </a>
+                <a href="{{ url_for('investments.add_investment') }}" class="nav-item">
+                    <span class="nav-icon">➕</span>
+                    <span class="nav-label">Add Investment</span>
+                </a>
+                <a href="{{ url_for('reports.monthly_report') }}" class="nav-item">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-label">Reports</span>
+                </a>
+
+                <a href="{{ url_for('market.upload_prices') }}" class="nav-item">
+                    <span class="nav-icon">📤</span>
+                    <span class="nav-label">Upload Prices</span>
+                </a>
+
+                <a href="{{ url_for('reports.portfolio_history') }}" class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-label">Portfolio History</span>
+                </a>
+
+                <!-- {% if current_user.role in ['admin', 'superadmin'] %}
+                    <a href="{{ url_for('market.upload_prices') }}" class="nav-item">
+                        <span class="nav-icon">📤</span>
+                        <span class="nav-label">Upload Prices</span>
+                    </a>
+                {% endif %} -->
+
+                {% if current_user.role == 'superadmin' %}
+                    <a href="{{ url_for('auth.users') }}" class="nav-item">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-label">Users</span>
+                    </a>
+                {% endif %}
+
+                <div class="sidebar-divider"></div>
+
+                <a href="{{ url_for('auth.logout') }}" class="nav-item nav-item--danger">
+                    <span class="nav-icon">🚪</span>
+                    <span class="nav-label">Logout</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="nav-item">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-label">Login</span>
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-label">Register</span>
+                </a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+</body>
+</html>

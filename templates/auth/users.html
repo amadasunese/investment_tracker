@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+
+<h1>User Management</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Current Role</th>
+            <th>Change Role</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.full_name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('auth.update_role', user_id=user.id, role='user') }}" style="display:inline;">
+                    <button type="submit">User</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('auth.update_role', user_id=user.id, role='admin') }}" style="display:inline;">
+                    <button type="submit">Admin</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('auth.update_role', user_id=user.id, role='superadmin') }}" style="display:inline;">
+                    <button type="submit">Superadmin</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
